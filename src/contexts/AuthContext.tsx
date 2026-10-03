@@ -12,6 +12,7 @@ interface AuthContextValue {
     email: string,
     password: string,
     fullName: string,
+    phone: string,
     role: ProfileRole,
   ) => Promise<{ needsEmailConfirmation: boolean }>
   signIn: (email: string, password: string) => Promise<void>
@@ -50,11 +51,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  async function signUp(email: string, password: string, fullName: string, role: ProfileRole) {
+  async function signUp(email: string, password: string, fullName: string, phone: string, role: ProfileRole) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName, role } },
+      options: { data: { full_name: fullName, phone: phone || null, role } },
     })
     if (error) throw error
     return { needsEmailConfirmation: !data.session }

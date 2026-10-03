@@ -13,6 +13,7 @@ export function SignUp() {
   const { signUp } = useAuth()
   const navigate = useNavigate()
   const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<ProfileRole>('client')
@@ -25,7 +26,7 @@ export function SignUp() {
     setLoading(true)
     setError(null)
     try {
-      const { needsEmailConfirmation } = await signUp(email, password, fullName, role)
+      const { needsEmailConfirmation } = await signUp(email, password, fullName, phone, role)
       if (needsEmailConfirmation) {
         setConfirmSent(true)
       } else {
@@ -79,6 +80,16 @@ export function SignUp() {
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             className="w-full rounded border border-line bg-panel2 px-3 py-2.5 text-sm text-bone"
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-mute">Phone</label>
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="So shops can reach you about your spot in line"
+            className="w-full rounded border border-line bg-panel2 px-3 py-2.5 text-sm text-bone placeholder:text-mute/60"
           />
         </div>
         <div>
