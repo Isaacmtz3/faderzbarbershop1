@@ -48,9 +48,39 @@ function PeopleIcon() {
   )
 }
 
-function BarberPole() {
+function ScissorsWatermark() {
   return (
-    <div className="h-12 w-4 shrink-0 overflow-hidden rounded-full border-2 border-slate-800 shadow-sm">
+    <svg
+      className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 text-white/[0.04]"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1"
+    >
+      <circle cx="6" cy="6" r="3" />
+      <circle cx="6" cy="18" r="3" />
+      <path d="m20 4-14.5 14.5M20 20 8.5 8.5" />
+    </svg>
+  )
+}
+
+/** Subtle film-grain overlay — the single cheapest trick for making a flat
+ * gradient read as "designed" instead of a default CSS background. */
+function Grain({ className = '' }: { className?: string }) {
+  return (
+    <svg className={`pointer-events-none absolute inset-0 h-full w-full ${className}`} aria-hidden>
+      <filter id="grain">
+        <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" />
+        <feColorMatrix type="saturate" values="0" />
+      </filter>
+      <rect width="100%" height="100%" filter="url(#grain)" opacity="0.045" />
+    </svg>
+  )
+}
+
+function BarberPole({ className = 'h-12 w-4' }: { className?: string }) {
+  return (
+    <div className={`${className} shrink-0 overflow-hidden rounded-full border-2 border-slate-800 shadow-sm`}>
       <div
         className="h-full w-full"
         style={{
@@ -70,67 +100,90 @@ export function Landing() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
-      <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-6">
-        <div className="flex items-center gap-2">
-          <span className="font-display text-2xl font-extrabold tracking-tight text-brand">Lobby</span>
-          <BarberPole />
-        </div>
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/login')} className="hidden text-sm font-medium text-slate-600 hover:text-slate-900 sm:block">
-            Sign in
-          </button>
-          <button
-            onClick={() => goToSignUp('shop_owner')}
-            className="rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brandBright"
-          >
-            For barbershops
-          </button>
+    <div className="relative min-h-screen overflow-hidden bg-white text-slate-900">
+      {/* Gradient-mesh backdrop: two soft, oversized blurred blobs behind the
+          hero. This is what gives a flat-white page actual depth without a photo. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[640px] overflow-hidden">
+        <div className="absolute -left-32 -top-40 h-[520px] w-[520px] rounded-full bg-brand/15 blur-[110px]" />
+        <div className="absolute -right-24 top-10 h-[420px] w-[420px] rounded-full bg-crimson/10 blur-[110px]" />
+      </div>
+
+      <header className="sticky top-0 z-30 border-b border-slate-900/5 bg-white/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
+          <div className="flex items-center gap-2">
+            <span className="font-display text-2xl font-extrabold tracking-tight text-brand">Lobby</span>
+            <BarberPole />
+          </div>
+          <div className="flex items-center gap-5">
+            <button
+              onClick={() => navigate('/login')}
+              className="hidden text-sm font-medium text-slate-600 transition-colors hover:text-slate-900 sm:block"
+            >
+              Sign in
+            </button>
+            <button
+              onClick={() => goToSignUp('shop_owner')}
+              className="rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.05),0_8px_20px_-6px_rgba(47,111,237,0.5)] transition-all hover:-translate-y-px hover:bg-brandBright hover:shadow-[0_1px_2px_rgba(0,0,0,0.05),0_12px_24px_-6px_rgba(47,111,237,0.6)] active:translate-y-0"
+            >
+              For barbershops
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-5 pb-20">
-        <p className="mb-3 text-xs font-bold uppercase tracking-widest text-brand">
-          The barbershop queue, made easy
-        </p>
-        <h1 className="font-display text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
-          Find your next cut.
-          <br />
-          <span className="text-brand">Know the wait</span> before you go.
-        </h1>
-        <p className="mt-5 max-w-lg text-lg text-slate-600">
-          Explore nearby barbershops, check live wait times, then join the queue or book with your
-          barber.
-        </p>
-
-        <div className="mt-8 max-w-sm space-y-3">
-          <button
-            onClick={() => goToSignUp('client')}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-base font-semibold text-white shadow-sm transition-colors hover:bg-brandBright"
-          >
-            <PinIcon />
-            Browse shops
-          </button>
-          <button
-            onClick={() => goToSignUp('shop_owner')}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-brand px-6 py-4 text-base font-semibold text-brand transition-colors hover:bg-brand/5"
-          >
-            <StoreIcon />
-            I own a barbershop
-          </button>
-          <p className="pt-1 text-center text-sm text-slate-500 sm:hidden">
-            Already have an account?{' '}
-            <button onClick={() => navigate('/login')} className="font-medium text-brand hover:underline">
-              Sign in
-            </button>
+      <main className="mx-auto max-w-5xl px-5 pb-24">
+        <div className="pt-14 sm:pt-20">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-brand">
+            The barbershop queue, made easy
           </p>
+          <h1 className="max-w-2xl font-display text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-6xl">
+            Find your next cut.
+            <br />
+            <span className="bg-gradient-to-r from-brand to-[#1a4fc2] bg-clip-text text-transparent">
+              Know the wait
+            </span>{' '}
+            before you go.
+          </h1>
+          <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-600">
+            Explore nearby barbershops, check live wait times, then join the queue or book with
+            your barber.
+          </p>
+
+          <div className="mt-9 max-w-sm space-y-3">
+            <button
+              onClick={() => goToSignUp('client')}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-base font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.05),0_12px_24px_-8px_rgba(47,111,237,0.55)] transition-all hover:-translate-y-0.5 hover:bg-brandBright hover:shadow-[0_1px_2px_rgba(0,0,0,0.05),0_16px_28px_-8px_rgba(47,111,237,0.65)] active:translate-y-0"
+            >
+              <PinIcon />
+              Browse shops
+            </button>
+            <button
+              onClick={() => goToSignUp('shop_owner')}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-brand bg-white px-6 py-4 text-base font-semibold text-brand shadow-sm transition-all hover:-translate-y-0.5 hover:bg-brand/5 hover:shadow-md active:translate-y-0"
+            >
+              <StoreIcon />
+              I own a barbershop
+            </button>
+            <p className="pt-1 text-center text-sm text-slate-500 sm:hidden">
+              Already have an account?{' '}
+              <button onClick={() => navigate('/login')} className="font-medium text-brand hover:underline">
+                Sign in
+              </button>
+            </p>
+          </div>
         </div>
 
-        <div className="relative mt-16 overflow-hidden rounded-2xl bg-slate-900 shadow-xl">
-          <div className="flex min-h-[320px] items-center">
-            <div className="flex h-full shrink-0 items-stretch gap-4 py-10 pl-6">
+        <div className="relative mt-16 overflow-hidden rounded-2xl bg-slate-900 shadow-[0_20px_60px_-15px_rgba(15,23,42,0.5)] sm:mt-24">
+          {/* Ambient glow + grain give the dark panel a photographic feel without a photo */}
+          <div className="pointer-events-none absolute -left-20 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full bg-crimson/20 blur-[90px]" />
+          <div className="pointer-events-none absolute -right-16 -top-16 h-72 w-72 rounded-full bg-brand/25 blur-[90px]" />
+          <Grain className="opacity-60 mix-blend-overlay" />
+          <ScissorsWatermark />
+
+          <div className="relative flex min-h-[320px] items-center">
+            <div className="flex h-full shrink-0 items-stretch py-10 pl-6 sm:pl-10">
               <div
-                className="w-6 rounded-full"
+                className="w-6 rounded-full shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
                 style={{
                   background:
                     'repeating-linear-gradient(45deg, #e8392e 0 10px, #ffffff 10px 20px, #2f6fed 20px 30px, #ffffff 30px 40px)',
@@ -144,10 +197,10 @@ export function Landing() {
                 </h2>
                 <div className="mt-4 h-1 w-10 rounded-full bg-brand" />
               </div>
-              <div className="rounded-xl bg-white p-5 text-slate-900 shadow-lg">
+              <div className="rounded-xl border border-slate-100 bg-white p-5 text-slate-900 shadow-[0_8px_16px_-4px_rgba(0,0,0,0.1),0_24px_48px_-16px_rgba(0,0,0,0.25)]">
                 <p className="font-display text-lg font-bold">Platinum Kutz Barbershop</p>
                 <div className="mt-2 flex items-center gap-1.5 text-sm text-volt">
-                  <span className="h-2 w-2 rounded-full bg-volt" />
+                  <span className="h-2 w-2 rounded-full bg-volt shadow-[0_0_0_3px_rgba(53,208,127,0.15)]" />
                   Live wait time
                 </div>
                 <p className="mt-1 text-2xl font-bold text-slate-900">8 min wait</p>
@@ -157,7 +210,7 @@ export function Landing() {
                 </div>
                 <button
                   onClick={() => goToSignUp('client')}
-                  className="mt-4 w-full rounded-lg bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brandBright"
+                  className="mt-4 w-full rounded-lg bg-brand py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-px hover:bg-brandBright hover:shadow-md active:translate-y-0"
                 >
                   Join queue
                 </button>
@@ -166,19 +219,20 @@ export function Landing() {
           </div>
         </div>
 
-        <div className="mt-20">
-          <h2 className="text-center font-display text-3xl font-extrabold">How Lobby works</h2>
-          <div className="mt-10 grid grid-cols-1 gap-10 sm:grid-cols-3">
+        <div className="mt-24 sm:mt-28">
+          <h2 className="text-center font-display text-3xl font-extrabold tracking-tight">How Lobby works</h2>
+          <div className="relative mt-12 grid grid-cols-1 gap-10 sm:grid-cols-3">
+            <div className="absolute left-0 right-0 top-7 hidden h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent sm:block" />
             {[
               { step: 1, icon: <PinIcon />, label: 'Find a shop' },
               { step: 2, icon: <ClockIcon />, label: 'Check the wait' },
               { step: 3, icon: <CalendarIcon />, label: 'Join or book' },
             ].map(({ step, icon, label }) => (
-              <div key={step} className="flex flex-col items-center text-center">
+              <div key={step} className="relative flex flex-col items-center text-center">
                 <span className="mb-2 flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-500">
                   {step}
                 </span>
-                <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-brand text-brand">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full border border-brand/20 bg-brand/5 text-brand shadow-[0_4px_12px_-4px_rgba(47,111,237,0.3)]">
                   {icon}
                 </div>
                 <p className="mt-3 font-semibold text-slate-900">{label}</p>
