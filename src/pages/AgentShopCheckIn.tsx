@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import type { Barber, Shop } from '../types'
 
@@ -8,7 +7,6 @@ const DEFAULT_SERVICES = ['Haircut', 'Haircut + Beard', 'Beard trim', 'Kids cut'
 
 export function AgentShopCheckIn() {
   const { slug } = useParams<{ slug: string }>()
-  const { user } = useAuth()
 
   const [shop, setShop] = useState<Shop | null>(null)
   const [barbers, setBarbers] = useState<Barber[]>([])
@@ -42,7 +40,7 @@ export function AgentShopCheckIn() {
   }, [slug])
 
   async function handleCheckIn() {
-    if (!shop || !user || !clientName.trim()) return
+    if (!shop || !clientName.trim()) return
     setSubmitting(true)
     setError(null)
     const { error: insertError } = await supabase.from('queue').insert({
@@ -51,7 +49,6 @@ export function AgentShopCheckIn() {
       phone: phone.trim() || null,
       service,
       barber_id: barberId || null,
-      checked_in_by: user.id,
     })
     setSubmitting(false)
     if (insertError) {

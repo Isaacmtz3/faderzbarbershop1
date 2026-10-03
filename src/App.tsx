@@ -9,16 +9,12 @@ import { ShopDetail } from './pages/ShopDetail'
 import { ShopDirectory } from './pages/ShopDirectory'
 import { SignUp } from './pages/SignUp'
 
-function RequireRole({ role, children }: { role: 'shop_owner' | 'agent'; children: React.ReactNode }) {
+function RequireRole({ role, children }: { role: 'shop_owner'; children: React.ReactNode }) {
   const { user, profile, loading } = useAuth()
   if (loading) return <div className="mx-auto max-w-3xl px-5 py-10 text-mute">Loading…</div>
   if (!user) return <Navigate to="/login" replace />
   if (profile && profile.role !== role) {
-    return (
-      <div className="mx-auto max-w-lg px-5 py-10 text-mute">
-        This page is for {role === 'shop_owner' ? 'shop owners' : 'agents'} only.
-      </div>
-    )
+    return <div className="mx-auto max-w-lg px-5 py-10 text-mute">This page is for shop owners only.</div>
   }
   return <>{children}</>
 }
@@ -40,22 +36,8 @@ function App() {
             </RequireRole>
           }
         />
-        <Route
-          path="/agent"
-          element={
-            <RequireRole role="agent">
-              <AgentExplore />
-            </RequireRole>
-          }
-        />
-        <Route
-          path="/agent/shop/:slug"
-          element={
-            <RequireRole role="agent">
-              <AgentShopCheckIn />
-            </RequireRole>
-          }
-        />
+        <Route path="/agent" element={<AgentExplore />} />
+        <Route path="/agent/shop/:slug" element={<AgentShopCheckIn />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

@@ -6,7 +6,6 @@ import type { ProfileRole } from '../types'
 const ROLE_OPTIONS: { value: ProfileRole; label: string; blurb: string }[] = [
   { value: 'client', label: 'Client', blurb: 'Browse shops, check in, see live wait times' },
   { value: 'shop_owner', label: 'Shop owner', blurb: 'List your shop and run its queue board' },
-  { value: 'agent', label: 'Agent', blurb: 'Check clients in on their behalf, across any shop' },
 ]
 
 export function SignUp() {
@@ -30,7 +29,7 @@ export function SignUp() {
       if (needsEmailConfirmation) {
         setConfirmSent(true)
       } else {
-        navigate(role === 'shop_owner' ? '/owner' : role === 'agent' ? '/agent' : '/')
+        navigate(role === 'shop_owner' ? '/owner' : '/')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
