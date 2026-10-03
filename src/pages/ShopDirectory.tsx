@@ -1,12 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { distanceMiles, formatDistance } from '../lib/geo'
 import { supabase } from '../lib/supabase'
 import type { Shop, ShopQueueStats } from '../types'
+
+type LocationState = 'idle' | 'locating' | 'granted' | 'denied'
 
 export function ShopDirectory() {
   const [shops, setShops] = useState<Shop[]>([])
   const [stats, setStats] = useState<Record<string, ShopQueueStats>>({})
   const [loading, setLoading] = useState(true)
+
+  const [locationState, setLocationState] = useState<LocationState>('idle')
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
 
   async function loadStats() {
     const { data } = await supabase.from('shop_queue_stats').select('*')
@@ -43,6 +49,40 @@ export function ShopDirectory() {
     }
   }, [])
 
+  function useMyLocation() {
+    if (!navigator.geolocation) {
+      setLocationState('denied')
+      return
+    }
+    setLocationState('locating')
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        setLocationState('granted')
+      },
+      () => setLocationState('denied'),
+      { enableHighAccuracy: false, timeout: 10000 },
+    )
+  }
+
+  const shopsWithDistance = useMemo(() => {
+    const withDistance = shops.map((shop) => ({
+      shop,
+      distance:
+        coords && shop.lat != null && shop.lng != null
+          ? distanceMiles(coords.lat, coords.lng, shop.lat, shop.lng)
+          : null,
+    }))
+    if (coords) {
+      withDistance.sort((a, b) => {
+        if (a.distance == null) return 1
+        if (b.distance == null) return -1
+        return a.distance - b.distance
+      })
+    }
+    return withDistance
+  }, [shops, coords])
+
   return (
     <div className="mx-auto max-w-6xl px-5 py-10">
       <div className="mb-10">
@@ -55,6 +95,26 @@ export function ShopDirectory() {
           Browse shops on Lobby, see real wait times, and check in before you even walk in the
           door.
         </p>
+
+        <div className="mt-5">
+          {locationState !== 'granted' && (
+            <button
+              onClick={useMyLocation}
+              disabled={locationState === 'locating'}
+              className="rounded border border-line bg-panel px-3 py-2 text-sm text-mute transition-colors hover:text-bone disabled:opacity-50"
+            >
+              {locationState === 'locating' ? 'Finding you…' : '📍 Show shops near me'}
+            </button>
+          )}
+          {locationState === 'granted' && (
+            <p className="text-sm text-volt">Showing shops nearest you first.</p>
+          )}
+          {locationState === 'denied' && (
+            <p className="text-sm text-mute">
+              Couldn't get your location — showing all shops instead.
+            </p>
+          )}
+        </div>
       </div>
 
       {loading && <p className="text-mute">Loading shops…</p>}
@@ -70,7 +130,7 @@ export function ShopDirectory() {
       )}
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {shops.map((shop) => {
+        {shopsWithDistance.map(({ shop, distance }) => {
           const stat = stats[shop.id]
           const waiting = stat?.waiting_count ?? 0
           return (
@@ -90,7 +150,9 @@ export function ShopDirectory() {
                 )}
               </div>
               <h3 className="font-display font-semibold text-bone">{shop.name}</h3>
-              {shop.city && <p className="text-xs text-mute">{shop.city}</p>}
+              <p className="text-xs text-mute">
+                {distance != null ? formatDistance(distance) : shop.city || ' '}
+              </p>
               <div className="mt-3 flex items-center gap-1.5 text-xs">
                 <span
                   className="h-1.5 w-1.5 rounded-full"

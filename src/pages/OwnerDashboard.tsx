@@ -76,29 +76,31 @@ export function OwnerDashboard({
   }
 
   return (
-    <div className="mx-auto flex max-w-6xl gap-6 px-5 py-8">
-      <aside className="w-48 shrink-0 space-y-1">
+    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-8 lg:flex-row">
+      <aside className="lg:w-48 lg:shrink-0">
         <h2 className="mb-3 truncate font-display text-sm font-semibold text-bone">{shop.name}</h2>
-        {(
-          [
-            ['overview', 'Overview'],
-            ['queue', 'Live queue'],
-            ['clients', 'Clients'],
-            ['barbers', 'Barbers'],
-            ['settings', 'Settings'],
-          ] as [Tab, string][]
-        ).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={`w-full rounded px-3 py-2 text-left text-sm font-medium transition-colors ${
-              tab === key ? 'text-crimsonBright' : 'text-mute hover:bg-panel2 hover:text-bone'
-            }`}
-            style={tab === key ? { backgroundColor: `${shop.accent_color}26`, color: shop.accent_color } : undefined}
-          >
-            {label}
-          </button>
-        ))}
+        <div className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+          {(
+            [
+              ['overview', 'Overview'],
+              ['queue', 'Live queue'],
+              ['clients', 'Clients'],
+              ['barbers', 'Barbers'],
+              ['settings', 'Settings'],
+            ] as [Tab, string][]
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`shrink-0 whitespace-nowrap rounded px-3 py-2 text-left text-sm font-medium transition-colors lg:w-full ${
+                tab === key ? 'text-crimsonBright' : 'text-mute hover:bg-panel2 hover:text-bone'
+              }`}
+              style={tab === key ? { backgroundColor: `${shop.accent_color}26`, color: shop.accent_color } : undefined}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </aside>
 
       <main className="min-w-0 flex-1">
@@ -183,8 +185,8 @@ function QueueTab({
   return (
     <div>
       <h1 className="mb-6 font-display text-2xl font-semibold text-bone">Live queue</h1>
-      <div className="overflow-hidden rounded-md border border-line bg-panel">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-md border border-line bg-panel">
+        <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-mute">
               <th className="px-5 py-3 font-medium">Client</th>
@@ -245,8 +247,8 @@ function ClientsTab({ clients }: { clients: Client[] }) {
   return (
     <div>
       <h1 className="mb-6 font-display text-2xl font-semibold text-bone">Clients</h1>
-      <div className="overflow-hidden rounded-md border border-line bg-panel">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-md border border-line bg-panel">
+        <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-mute">
               <th className="px-5 py-3 font-medium">Name</th>
@@ -347,6 +349,9 @@ function SettingsTab({ shop, onShopUpdated }: { shop: Shop; onShopUpdated: (shop
   const [address, setAddress] = useState(shop.address ?? '')
   const [phone, setPhone] = useState(shop.phone ?? '')
   const [accentColor, setAccentColor] = useState(shop.accent_color)
+  const [lat, setLat] = useState(shop.lat)
+  const [lng, setLng] = useState(shop.lng)
+  const [locating, setLocating] = useState(false)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -356,7 +361,7 @@ function SettingsTab({ shop, onShopUpdated }: { shop: Shop; onShopUpdated: (shop
     setMessage(null)
     const { data, error } = await supabase
       .from('shops')
-      .update({ name, city, address, phone, accent_color: accentColor })
+      .update({ name, city, address, phone, accent_color: accentColor, lat, lng })
       .eq('id', shop.id)
       .select()
       .single()
@@ -365,6 +370,26 @@ function SettingsTab({ shop, onShopUpdated }: { shop: Shop; onShopUpdated: (shop
       onShopUpdated(data as Shop)
       setMessage('Saved.')
     }
+  }
+
+  function captureLocation() {
+    if (!navigator.geolocation) {
+      setMessage('Location is not available in this browser.')
+      return
+    }
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLat(pos.coords.latitude)
+        setLng(pos.coords.longitude)
+        setLocating(false)
+      },
+      () => {
+        setMessage("Couldn't get your location — check your browser's location permission.")
+        setLocating(false)
+      },
+      { enableHighAccuracy: false, timeout: 10000 },
+    )
   }
 
   async function handleLogoUpload(e: ChangeEvent<HTMLInputElement>) {
@@ -444,6 +469,22 @@ function SettingsTab({ shop, onShopUpdated }: { shop: Shop; onShopUpdated: (shop
             onChange={(e) => setAddress(e.target.value)}
             className="w-full rounded border border-line bg-panel2 px-3 py-2.5 text-sm text-bone"
           />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-mute">Location</label>
+          <p className="mb-2 text-xs text-mute">
+            {lat != null && lng != null
+              ? 'Pinned — clients browsing "near me" can find you.'
+              : "Not set yet — you won't show up in nearby searches."}
+          </p>
+          <button
+            type="button"
+            onClick={captureLocation}
+            disabled={locating}
+            className="rounded border border-line px-3 py-2 text-sm text-bone hover:bg-panel2 disabled:opacity-50"
+          >
+            {locating ? 'Locating…' : lat != null ? '📍 Update to my current location' : '📍 Use my current location'}
+          </button>
         </div>
         <div>
           <label className="mb-1.5 block text-xs uppercase tracking-wider text-mute">Accent color</label>
