@@ -116,6 +116,15 @@ export function ShopDetail() {
     await loadStats(shop.id)
   }
 
+  async function handleCancel() {
+    if (!shop || !myPosition) return
+    setCheckingIn(true)
+    await supabase.from('queue').delete().eq('id', myPosition.id)
+    setCheckingIn(false)
+    await loadMyPosition(shop.id)
+    await loadStats(shop.id)
+  }
+
   if (loading) {
     return <div className="mx-auto max-w-3xl px-5 py-10 text-mute">Loading…</div>
   }
@@ -174,6 +183,13 @@ export function ShopDetail() {
           <p className="text-xs uppercase tracking-wider text-mute">You're checked in</p>
           <p className="font-display text-5xl font-bold text-bone">#{myPosition.position}</p>
           <p className="mt-1 text-sm text-mute">{myPosition.service}</p>
+          <button
+            onClick={handleCancel}
+            disabled={checkingIn}
+            className="mt-4 text-sm text-mute underline-offset-2 hover:text-crimsonBright hover:underline disabled:opacity-50"
+          >
+            Cancel check-in
+          </button>
         </div>
       ) : (
         <div className="mb-8 rounded-md border border-line bg-panel p-6">
