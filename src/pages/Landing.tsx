@@ -78,6 +78,54 @@ function Grain({ className = '' }: { className?: string }) {
   )
 }
 
+/** Hand-drawn flat-illustration barber chair — fills the hero's empty
+ * right column on desktop with on-theme content instead of leaving it
+ * blank, no external image or generation service involved. */
+function BarberChairIllustration() {
+  return (
+    <svg viewBox="0 0 320 320" className="h-full w-full">
+      <defs>
+        <radialGradient id="chairGlow" cx="50%" cy="42%" r="60%">
+          <stop offset="0%" stopColor="#2f6fed" stopOpacity="0.12" />
+          <stop offset="100%" stopColor="#2f6fed" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="chairBody" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1e293b" />
+          <stop offset="100%" stopColor="#0f172a" />
+        </linearGradient>
+      </defs>
+
+      <circle cx="160" cy="150" r="150" fill="url(#chairGlow)" />
+      <ellipse cx="160" cy="280" rx="90" ry="12" fill="#0f172a" opacity="0.08" />
+
+      {/* mirror ring behind the chair */}
+      <circle cx="160" cy="130" r="92" fill="none" stroke="#2f6fed" strokeOpacity="0.15" strokeWidth="10" />
+
+      {/* pedestal base + column */}
+      <path d="M118 272c0-10 19-16 42-16s42 6 42 16" fill="#1a4fc2" />
+      <rect x="150" y="196" width="20" height="62" rx="6" fill="url(#chairBody)" />
+      <ellipse cx="160" cy="196" rx="34" ry="10" fill="#334155" />
+
+      {/* seat */}
+      <rect x="112" y="168" width="96" height="34" rx="12" fill="url(#chairBody)" />
+      {/* armrests */}
+      <rect x="92" y="166" width="26" height="14" rx="7" fill="#1e293b" />
+      <rect x="202" y="166" width="26" height="14" rx="7" fill="#1e293b" />
+
+      {/* backrest, tilted slightly */}
+      <g transform="rotate(-6 160 110)">
+        <rect x="122" y="56" width="76" height="118" rx="16" fill="url(#chairBody)" />
+        <rect x="134" y="70" width="52" height="90" rx="10" fill="#2f6fed" fillOpacity="0.1" />
+      </g>
+      {/* headrest */}
+      <rect x="136" y="42" width="48" height="26" rx="10" fill="#334155" />
+
+      {/* accent stripe echoing the barber pole */}
+      <rect x="150" y="196" width="20" height="62" rx="6" fill="none" stroke="#e8392e" strokeOpacity="0.25" strokeWidth="1.5" />
+    </svg>
+  )
+}
+
 function BarberPole({ className = 'h-12 w-4' }: { className?: string }) {
   return (
     <div className={`${className} shrink-0 overflow-hidden rounded-full border-2 border-slate-800 shadow-sm`}>
@@ -132,44 +180,50 @@ export function Landing() {
       </header>
 
       <main className="mx-auto max-w-5xl px-5 pb-24">
-        <div className="pt-14 sm:pt-20">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-brand">
-            The barbershop queue, made easy
-          </p>
-          <h1 className="max-w-2xl font-display text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-6xl">
-            Find your next cut.
-            <br />
-            <span className="bg-gradient-to-r from-brand to-[#1a4fc2] bg-clip-text text-transparent">
-              Know the wait
-            </span>{' '}
-            before you go.
-          </h1>
-          <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-600">
-            Explore nearby barbershops, check live wait times, then join the queue or book with
-            your barber.
-          </p>
-
-          <div className="mt-9 max-w-sm space-y-3">
-            <button
-              onClick={() => goToSignUp('client')}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-base font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.05),0_12px_24px_-8px_rgba(47,111,237,0.55)] transition-all hover:-translate-y-0.5 hover:bg-brandBright hover:shadow-[0_1px_2px_rgba(0,0,0,0.05),0_16px_28px_-8px_rgba(47,111,237,0.65)] active:translate-y-0"
-            >
-              <PinIcon />
-              Browse shops
-            </button>
-            <button
-              onClick={() => goToSignUp('shop_owner')}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-brand bg-white px-6 py-4 text-base font-semibold text-brand shadow-sm transition-all hover:-translate-y-0.5 hover:bg-brand/5 hover:shadow-md active:translate-y-0"
-            >
-              <StoreIcon />
-              I own a barbershop
-            </button>
-            <p className="pt-1 text-center text-sm text-slate-500 sm:hidden">
-              Already have an account?{' '}
-              <button onClick={() => navigate('/login')} className="font-medium text-brand hover:underline">
-                Sign in
-              </button>
+        <div className="grid items-center gap-10 pt-14 sm:grid-cols-[1.1fr_0.9fr] sm:gap-6 sm:pt-20">
+          <div>
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-brand">
+              The barbershop queue, made easy
             </p>
+            <h1 className="max-w-2xl font-display text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-6xl">
+              Find your next cut.
+              <br />
+              <span className="bg-gradient-to-r from-brand to-[#1a4fc2] bg-clip-text text-transparent">
+                Know the wait
+              </span>{' '}
+              before you go.
+            </h1>
+            <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-600">
+              Explore nearby barbershops, check live wait times, then join the queue or book with
+              your barber.
+            </p>
+
+            <div className="mt-9 max-w-sm space-y-3">
+              <button
+                onClick={() => goToSignUp('client')}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-base font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.05),0_12px_24px_-8px_rgba(47,111,237,0.55)] transition-all hover:-translate-y-0.5 hover:bg-brandBright hover:shadow-[0_1px_2px_rgba(0,0,0,0.05),0_16px_28px_-8px_rgba(47,111,237,0.65)] active:translate-y-0"
+              >
+                <PinIcon />
+                Browse shops
+              </button>
+              <button
+                onClick={() => goToSignUp('shop_owner')}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-brand bg-white px-6 py-4 text-base font-semibold text-brand shadow-sm transition-all hover:-translate-y-0.5 hover:bg-brand/5 hover:shadow-md active:translate-y-0"
+              >
+                <StoreIcon />
+                I own a barbershop
+              </button>
+              <p className="pt-1 text-center text-sm text-slate-500 sm:hidden">
+                Already have an account?{' '}
+                <button onClick={() => navigate('/login')} className="font-medium text-brand hover:underline">
+                  Sign in
+                </button>
+              </p>
+            </div>
+          </div>
+
+          <div className="hidden sm:block" aria-hidden>
+            <BarberChairIllustration />
           </div>
         </div>
 
