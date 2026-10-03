@@ -1,9 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 @import 'tailwindcss';
 
 @theme {
-  --font-display: 'Chakra Petch', sans-serif;
-  --font-sans: 'Inter', sans-serif;
+  /* On Apple devices this renders real San Francisco — the whole point.
+     Inter is metric-compatible and was designed as an SF Pro-alike, so it
+     carries the same feel on every other platform instead of a generic
+     fallback. One system-feeling font family, no separate "display" font. */
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', Inter, system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, system-ui, sans-serif;
 
   --color-void: #060607;
   --color-panel: #0f0f12;
