@@ -23,7 +23,7 @@ export function NavBar() {
         </Link>
 
         <nav className="hidden items-center gap-2 text-sm sm:flex">
-          <Link to="/" className={linkClass}>
+          <Link to="/browse" className={linkClass}>
             Browse shops
           </Link>
           <Link to="/agent" className={linkClass}>
@@ -68,7 +68,7 @@ export function NavBar() {
 
       {menuOpen && (
         <nav className="flex flex-col gap-1 border-t border-line px-5 py-3 text-sm sm:hidden">
-          <Link to="/" className={linkClass} onClick={() => setMenuOpen(false)}>
+          <Link to="/browse" className={linkClass} onClick={() => setMenuOpen(false)}>
             Browse shops
           </Link>
           <Link to="/agent" className={linkClass} onClick={() => setMenuOpen(false)}>

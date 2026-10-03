@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import type { ProfileRole } from '../types'
 
@@ -11,11 +11,13 @@ const ROLE_OPTIONS: { value: ProfileRole; label: string; blurb: string }[] = [
 export function SignUp() {
   const { signUp } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const defaultRole = (location.state as { defaultRole?: ProfileRole } | null)?.defaultRole
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [role, setRole] = useState<ProfileRole>('client')
+  const [role, setRole] = useState<ProfileRole>(defaultRole === 'shop_owner' ? 'shop_owner' : 'client')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [confirmSent, setConfirmSent] = useState(false)
