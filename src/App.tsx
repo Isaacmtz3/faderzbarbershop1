@@ -3,6 +3,7 @@ import { NavBar } from './components/NavBar'
 import { useAuth } from './contexts/AuthContext'
 import { AgentExplore } from './pages/AgentExplore'
 import { AgentShopCheckIn } from './pages/AgentShopCheckIn'
+import { CommandCenter } from './pages/CommandCenter'
 import { Landing } from './pages/Landing'
 import { Login } from './pages/Login'
 import { OwnerOnboarding } from './pages/OwnerOnboarding'
@@ -17,6 +18,16 @@ function RequireRole({ role, children }: { role: 'shop_owner'; children: React.R
   if (profile && profile.role !== role) {
     return <div className="mx-auto max-w-lg px-5 py-10 text-mute">This page is for shop owners only.</div>
   }
+  return <>{children}</>
+}
+
+/** Unlisted admin-only route. Unlike RequireRole, a non-admin visitor is
+ * bounced to "/" with no explanation — this route's existence isn't
+ * something to confirm to someone who isn't supposed to be here. */
+function RequireAdmin({ children }: { children: React.ReactNode }) {
+  const { user, profile, loading } = useAuth()
+  if (loading) return <div className="flex min-h-screen items-center justify-center bg-void text-mute">Loading…</div>
+  if (!user || profile?.role !== 'admin') return <Navigate to="/" replace />
   return <>{children}</>
 }
 
@@ -61,6 +72,14 @@ function App() {
         />
         <Route path="/agent" element={<AgentExplore />} />
         <Route path="/agent/shop/:slug" element={<AgentShopCheckIn />} />
+        <Route
+          path="/command-center"
+          element={
+            <RequireAdmin>
+              <CommandCenter />
+            </RequireAdmin>
+          }
+        />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
