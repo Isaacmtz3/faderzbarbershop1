@@ -33,13 +33,17 @@ function RequireAdmin({ children }: { children: React.ReactNode }) {
 
 /** "/" is the marketing landing page for new visitors, but a returning
  * signed-in user should never see a signup funnel again — send them
- * straight into the app. */
+ * straight to the part of the app their role actually uses. */
 function RootRoute() {
-  const { user, loading } = useAuth()
-  if (loading) {
+  const { user, profile, loading, profileLoading } = useAuth()
+  if (loading || (user && profileLoading)) {
     return <div className="flex min-h-screen items-center justify-center bg-void text-mute">Loading…</div>
   }
-  if (user) return <Navigate to="/browse" replace />
+  if (user) {
+    if (profile?.role === 'shop_owner') return <Navigate to="/owner" replace />
+    if (profile?.role === 'agent' || profile?.role === 'staff') return <Navigate to="/agent" replace />
+    return <Navigate to="/browse" replace />
+  }
   return <Landing />
 }
 

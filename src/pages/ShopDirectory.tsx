@@ -86,13 +86,14 @@ export function ShopDirectory() {
   return (
     <div className="mx-auto max-w-6xl px-5 py-10">
       <div className="mb-10">
+        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-brandBright">The Lobby</p>
         <h1 className="font-display text-3xl font-bold text-bone sm:text-4xl">
           Find your shop,
           <br />
           <span className="text-brandBright">skip the wait.</span>
         </h1>
         <p className="mt-3 max-w-lg text-mute">
-          Browse shops on Lobby, see real wait times, and check in before you even walk in the
+          Every barbershop on Lobby, real wait times, and a check-in before you even walk in the
           door.
         </p>
 

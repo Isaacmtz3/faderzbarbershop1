@@ -8,6 +8,7 @@ interface AuthContextValue {
   user: User | null
   profile: Profile | null
   loading: boolean
+  profileLoading: boolean
   signUp: (
     email: string,
     password: string,
@@ -26,10 +27,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [profileLoading, setProfileLoading] = useState(false)
 
   async function loadProfile(userId: string) {
+    setProfileLoading(true)
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
     setProfile(data as Profile | null)
+    setProfileLoading(false)
   }
 
   useEffect(() => {
@@ -45,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadProfile(newSession.user.id)
       } else {
         setProfile(null)
+        setProfileLoading(false)
       }
     })
 
@@ -81,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: session?.user ?? null,
         profile,
         loading,
+        profileLoading,
         signUp,
         signIn,
         signOut,
