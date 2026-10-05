@@ -22,7 +22,7 @@ export function OwnerDashboard({
       .from('queue')
       .select('*')
       .eq('shop_id', shop.id)
-      .in('status', ['waiting', 'in_chair'])
+      .in('status', ['waiting', 'called', 'in_chair'])
       .order('checked_in_at')
     setQueue((data as QueueEntry[]) ?? [])
   }
@@ -63,10 +63,21 @@ export function OwnerDashboard({
   }, [shop.id])
 
   const waiting = queue.filter((q) => q.status === 'waiting')
+  const called = queue.filter((q) => q.status === 'called')
   const inChair = queue.filter((q) => q.status === 'in_chair')
 
   async function callEntry(id: string) {
-    await supabase.from('queue').update({ status: 'in_chair', called_at: new Date().toISOString() }).eq('id', id)
+    await supabase.from('queue').update({ status: 'called', called_at: new Date().toISOString() }).eq('id', id)
+  }
+  async function callNext() {
+    const next = waiting[0]
+    if (next) await callEntry(next.id)
+  }
+  async function confirmArrived(id: string) {
+    await supabase.from('queue').update({ status: 'in_chair' }).eq('id', id)
+  }
+  async function markNoShow(id: string) {
+    await supabase.from('queue').update({ status: 'no_show' }).eq('id', id)
   }
   async function completeEntry(id: string) {
     await supabase.from('queue').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', id)
@@ -105,14 +116,24 @@ export function OwnerDashboard({
 
       <main className="min-w-0 flex-1">
         {tab === 'overview' && (
-          <OverviewTab waiting={waiting.length} inChair={inChair.length} completedToday={completedToday} accent={shop.accent_color} />
+          <OverviewTab
+            waiting={waiting.length}
+            called={called.length}
+            inChair={inChair.length}
+            completedToday={completedToday}
+            accent={shop.accent_color}
+          />
         )}
         {tab === 'queue' && (
           <QueueTab
             waiting={waiting}
+            called={called}
             inChair={inChair}
             barbers={barbers}
+            onCallNext={callNext}
             onCall={callEntry}
+            onConfirmArrived={confirmArrived}
+            onNoShow={markNoShow}
             onComplete={completeEntry}
             onRemove={removeEntry}
           />
@@ -127,11 +148,13 @@ export function OwnerDashboard({
 
 function OverviewTab({
   waiting,
+  called,
   inChair,
   completedToday,
   accent,
 }: {
   waiting: number
+  called: number
   inChair: number
   completedToday: number
   accent: string
@@ -139,12 +162,16 @@ function OverviewTab({
   return (
     <div>
       <h1 className="mb-6 font-display text-2xl font-semibold text-bone">Overview</h1>
-      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div className="rounded-md border border-line bg-panel p-5">
-          <p className="mb-2 text-xs uppercase tracking-wider text-mute">In queue now</p>
+          <p className="mb-2 text-xs uppercase tracking-wider text-mute">Waiting</p>
           <p className="font-display text-3xl font-bold" style={{ color: accent }}>
             {waiting}
           </p>
+        </div>
+        <div className="rounded-md border border-line bg-panel p-5">
+          <p className="mb-2 text-xs uppercase tracking-wider text-mute">Called</p>
+          <p className="font-display text-3xl font-bold text-amber">{called}</p>
         </div>
         <div className="rounded-md border border-line bg-panel p-5">
           <p className="mb-2 text-xs uppercase tracking-wider text-mute">In chair</p>
@@ -158,47 +185,83 @@ function OverviewTab({
       <div className="rounded-md border border-line bg-panel p-5">
         <h2 className="mb-4 font-display text-sm uppercase tracking-wider text-mute">Right now</h2>
         <p className="text-sm text-mute">
-          {waiting + inChair === 0 ? "Shop's quiet — no one checked in." : `${waiting} waiting, ${inChair} in the chair.`}
+          {waiting + called + inChair === 0
+            ? "Shop's quiet — no one checked in."
+            : `${waiting} waiting, ${called} called, ${inChair} in the chair.`}
         </p>
       </div>
     </div>
   )
 }
 
+const CALLED_GRACE_MINUTES = 10
+
+function expectedArrival(entry: QueueEntry): string {
+  if (entry.eta_minutes == null) return '—'
+  const base = new Date(entry.checked_in_at).getTime() + entry.eta_minutes * 60_000
+  return `${entry.eta_minutes} min (by ${new Date(base).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })})`
+}
+
 function QueueTab({
   waiting,
+  called,
   inChair,
   barbers,
+  onCallNext,
   onCall,
+  onConfirmArrived,
+  onNoShow,
   onComplete,
   onRemove,
 }: {
   waiting: QueueEntry[]
+  called: QueueEntry[]
   inChair: QueueEntry[]
   barbers: Barber[]
+  onCallNext: () => void
   onCall: (id: string) => void
+  onConfirmArrived: (id: string) => void
+  onNoShow: (id: string) => void
   onComplete: (id: string) => void
   onRemove: (id: string) => void
 }) {
   const barberName = (id: string | null) => barbers.find((b) => b.id === id)?.name ?? '—'
 
+  // Re-render periodically so "called Xm ago" and the grace-period flag
+  // stay accurate without needing a new Supabase event to trigger it.
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setTick((n) => n + 1), 30_000)
+    return () => clearInterval(t)
+  }, [])
+
   return (
     <div>
-      <h1 className="mb-6 font-display text-2xl font-semibold text-bone">Live queue</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="font-display text-2xl font-semibold text-bone">Live queue</h1>
+        <button
+          onClick={onCallNext}
+          disabled={waiting.length === 0}
+          className="rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brandBright disabled:opacity-40"
+        >
+          Call next client {waiting.length > 0 && `(${waiting.length} waiting)`}
+        </button>
+      </div>
+
       <div className="overflow-x-auto rounded-md border border-line bg-panel">
-        <table className="w-full min-w-[640px] text-sm">
+        <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase tracking-wider text-mute">
               <th className="px-5 py-3 font-medium">Client</th>
               <th className="px-5 py-3 font-medium">Service</th>
               <th className="px-5 py-3 font-medium">Barber</th>
               <th className="px-5 py-3 font-medium">Status</th>
-              <th className="px-5 py-3 font-medium">Checked in</th>
+              <th className="px-5 py-3 font-medium">Expected arrival</th>
               <th className="px-5 py-3 font-medium"></th>
             </tr>
           </thead>
           <tbody>
-            {[...inChair, ...waiting].length === 0 && (
+            {[...inChair, ...called, ...waiting].length === 0 && (
               <tr>
                 <td colSpan={6} className="px-5 py-8 text-center text-mute">
                   No one in the queue.
@@ -211,7 +274,7 @@ function QueueTab({
                 <td className="px-5 py-3 text-mute">{entry.service}</td>
                 <td className="px-5 py-3 text-mute">{barberName(entry.barber_id)}</td>
                 <td className="px-5 py-3 text-volt">In chair</td>
-                <td className="px-5 py-3 text-mute">{new Date(entry.checked_in_at).toLocaleTimeString()}</td>
+                <td className="px-5 py-3 text-mute">—</td>
                 <td className="px-5 py-3 text-right">
                   <button onClick={() => onComplete(entry.id)} className="text-xs text-brandBright hover:underline">
                     Complete
@@ -219,13 +282,40 @@ function QueueTab({
                 </td>
               </tr>
             ))}
+            {called.map((entry) => {
+              const minutesAgo = entry.called_at ? (Date.now() - new Date(entry.called_at).getTime()) / 60_000 : 0
+              const stuck = minutesAgo >= CALLED_GRACE_MINUTES
+              return (
+                <tr key={entry.id} className={`border-b border-line last:border-0 ${stuck ? 'bg-amber/5' : ''}`}>
+                  <td className="px-5 py-3 text-bone">{entry.client_name}</td>
+                  <td className="px-5 py-3 text-mute">{entry.service}</td>
+                  <td className="px-5 py-3 text-mute">{barberName(entry.barber_id)}</td>
+                  <td className={`px-5 py-3 ${stuck ? 'text-amber' : 'text-mute'}`}>
+                    Called {Math.round(minutesAgo)}m ago
+                    {stuck && <span className="ml-1">⚠</span>}
+                  </td>
+                  <td className="px-5 py-3 text-mute">{expectedArrival(entry)}</td>
+                  <td className="px-5 py-3 text-right">
+                    <button
+                      onClick={() => onConfirmArrived(entry.id)}
+                      className="mr-3 text-xs text-brandBright hover:underline"
+                    >
+                      They arrived
+                    </button>
+                    <button onClick={() => onNoShow(entry.id)} className="text-xs text-crimsonBright hover:underline">
+                      No-show
+                    </button>
+                  </td>
+                </tr>
+              )
+            })}
             {waiting.map((entry) => (
               <tr key={entry.id} className="border-b border-line last:border-0">
                 <td className="px-5 py-3 text-bone">{entry.client_name}</td>
                 <td className="px-5 py-3 text-mute">{entry.service}</td>
                 <td className="px-5 py-3 text-mute">{barberName(entry.barber_id)}</td>
                 <td className="px-5 py-3 text-mute">Waiting</td>
-                <td className="px-5 py-3 text-mute">{new Date(entry.checked_in_at).toLocaleTimeString()}</td>
+                <td className="px-5 py-3 text-mute">{expectedArrival(entry)}</td>
                 <td className="px-5 py-3 text-right">
                   <button onClick={() => onCall(entry.id)} className="mr-3 text-xs text-brandBright hover:underline">
                     Call

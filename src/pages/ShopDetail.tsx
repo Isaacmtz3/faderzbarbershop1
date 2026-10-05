@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
-import type { Barber, MyQueuePosition, Shop, ShopQueueStats } from '../types'
+import { ETA_OPTIONS, type Barber, type MyQueuePosition, type Shop, type ShopQueueStats } from '../types'
 
 const DEFAULT_SERVICES = ['Haircut', 'Haircut + Beard', 'Beard trim', 'Kids cut']
+const ALREADY_IN_QUEUE_MESSAGE =
+  "You're already checked in somewhere else — leave that queue first before joining a new one."
 
 export function ShopDetail() {
   const { slug } = useParams<{ slug: string }>()
@@ -19,6 +21,7 @@ export function ShopDetail() {
 
   const [service, setService] = useState(DEFAULT_SERVICES[0])
   const [barberId, setBarberId] = useState<string>('')
+  const [etaMinutes, setEtaMinutes] = useState<number>(ETA_OPTIONS[1])
   const [checkingIn, setCheckingIn] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -36,7 +39,7 @@ export function ShopDetail() {
       .from('my_queue_position')
       .select('*')
       .eq('shop_id', shopId)
-      .eq('status', 'waiting')
+      .in('status', ['waiting', 'called'])
       .order('checked_in_at')
       .limit(1)
       .maybeSingle()
@@ -106,10 +109,11 @@ export function ShopDetail() {
       phone: profile?.phone ?? null,
       service,
       barber_id: barberId || null,
+      eta_minutes: etaMinutes,
     })
     setCheckingIn(false)
     if (insertError) {
-      setError(insertError.message)
+      setError(insertError.code === '23505' ? ALREADY_IN_QUEUE_MESSAGE : insertError.message)
       return
     }
     await loadMyPosition(shop.id)
@@ -180,8 +184,17 @@ export function ShopDetail() {
           className="mb-8 rounded-md border p-6 text-center"
           style={{ borderColor: shop.accent_color, backgroundColor: `${shop.accent_color}1a` }}
         >
-          <p className="text-xs uppercase tracking-wider text-mute">You're checked in</p>
-          <p className="font-display text-5xl font-bold text-bone">#{myPosition.position}</p>
+          {myPosition.status === 'called' ? (
+            <>
+              <p className="text-xs uppercase tracking-wider text-mute">You're up!</p>
+              <p className="font-display text-3xl font-bold text-bone">Head to the shop now</p>
+            </>
+          ) : (
+            <>
+              <p className="text-xs uppercase tracking-wider text-mute">You're checked in</p>
+              <p className="font-display text-5xl font-bold text-bone">#{myPosition.position}</p>
+            </>
+          )}
           <p className="mt-1 text-sm text-mute">{myPosition.service}</p>
           <button
             onClick={handleCancel}
@@ -240,6 +253,26 @@ export function ShopDetail() {
                   </select>
                 </div>
               )}
+
+              <div>
+                <label className="mb-1.5 block text-xs uppercase tracking-wider text-mute">
+                  When will you arrive?
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {ETA_OPTIONS.map((mins) => (
+                    <button
+                      key={mins}
+                      type="button"
+                      onClick={() => setEtaMinutes(mins)}
+                      className={`rounded border px-3 py-2.5 text-sm font-medium transition-colors ${
+                        etaMinutes === mins ? 'border-brand bg-brand/10 text-bone' : 'border-line bg-panel2 text-mute'
+                      }`}
+                    >
+                      {mins} min
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {error && <p className="text-sm text-crimsonBright">{error}</p>}
 

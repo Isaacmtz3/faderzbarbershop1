@@ -33,7 +33,7 @@ export function CommandCenter() {
           supabase.from('shops').select('*').order('created_at', { ascending: false }),
           supabase.from('barbers').select('*'),
           supabase.from('shop_staff').select('shop_id'),
-          supabase.from('queue').select('*').in('status', ['waiting', 'in_chair']).order('checked_in_at'),
+          supabase.from('queue').select('*').in('status', ['waiting', 'called', 'in_chair']).order('checked_in_at'),
         ])
 
       const firstError = profileErr || shopErr || barberErr || staffErr || queueErr
@@ -218,7 +218,7 @@ export function CommandCenter() {
                   <tr key={entry.id} className="border-b border-line last:border-0">
                     <td className="px-5 py-3 text-bone">{entry.shop_name ?? '—'}</td>
                     <td className="px-5 py-3 text-mute">{entry.client_name}</td>
-                    <td className="px-5 py-3 text-mute">{entry.status === 'in_chair' ? 'In chair' : 'Waiting'}</td>
+                    <td className="px-5 py-3 text-mute">{entry.status === 'in_chair' ? 'In chair' : entry.status === 'called' ? 'Called' : 'Waiting'}</td>
                     <td className={`px-5 py-3 ${stuck ? 'text-amber' : 'text-mute'}`}>
                       {new Date(entry.checked_in_at).toLocaleString()}
                       {stuck && <span className="ml-2 text-xs">⚠ over {STUCK_THRESHOLD_HOURS}h</span>}

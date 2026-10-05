@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import type { Barber, Shop } from '../types'
+import { ETA_OPTIONS, type Barber, type Shop } from '../types'
 
 const DEFAULT_SERVICES = ['Haircut', 'Haircut + Beard', 'Beard trim', 'Kids cut']
 
@@ -16,6 +16,7 @@ export function AgentShopCheckIn() {
   const [phone, setPhone] = useState('')
   const [service, setService] = useState(DEFAULT_SERVICES[0])
   const [barberId, setBarberId] = useState('')
+  const [etaMinutes, setEtaMinutes] = useState<number>(ETA_OPTIONS[1])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -49,6 +50,7 @@ export function AgentShopCheckIn() {
       phone: phone.trim() || null,
       service,
       barber_id: barberId || null,
+      eta_minutes: etaMinutes,
     })
     setSubmitting(false)
     if (insertError) {
@@ -134,6 +136,23 @@ export function AgentShopCheckIn() {
             </select>
           </div>
         )}
+        <div>
+          <label className="mb-1.5 block text-xs uppercase tracking-wider text-mute">When will they arrive?</label>
+          <div className="grid grid-cols-3 gap-2">
+            {ETA_OPTIONS.map((mins) => (
+              <button
+                key={mins}
+                type="button"
+                onClick={() => setEtaMinutes(mins)}
+                className={`rounded border px-3 py-2.5 text-sm font-medium transition-colors ${
+                  etaMinutes === mins ? 'border-brand bg-brand/10 text-bone' : 'border-line bg-panel2 text-mute'
+                }`}
+              >
+                {mins} min
+              </button>
+            ))}
+          </div>
+        </div>
         {error && <p className="text-sm text-crimsonBright">{error}</p>}
         <button
           onClick={handleCheckIn}

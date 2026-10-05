@@ -41,7 +41,10 @@ export interface Barber {
   created_at: string
 }
 
-export type QueueStatus = 'waiting' | 'in_chair' | 'completed' | 'cancelled'
+export type QueueStatus = 'waiting' | 'called' | 'in_chair' | 'completed' | 'cancelled' | 'no_show'
+
+export const ETA_OPTIONS = [5, 10, 15] as const
+export type EtaMinutes = (typeof ETA_OPTIONS)[number]
 
 export interface QueueEntry {
   id: string
@@ -52,6 +55,7 @@ export interface QueueEntry {
   barber_id: string | null
   status: QueueStatus
   position: number | null
+  eta_minutes: number | null
   client_profile_id: string | null
   checked_in_by: string | null
   checked_in_at: string
@@ -65,8 +69,10 @@ export interface MyQueuePosition {
   barber_id: string | null
   service: string
   status: QueueStatus
+  eta_minutes: number | null
   checked_in_at: string
-  position: number
+  called_at: string | null
+  position: number | null
 }
 
 export interface Client {
