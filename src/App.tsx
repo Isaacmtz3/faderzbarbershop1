@@ -4,12 +4,14 @@ import { useAuth } from './contexts/AuthContext'
 import { AgentExplore } from './pages/AgentExplore'
 import { AgentShopCheckIn } from './pages/AgentShopCheckIn'
 import { CommandCenter } from './pages/CommandCenter'
+import { KioskCheckIn } from './pages/KioskCheckIn'
 import { Landing } from './pages/Landing'
 import { Login } from './pages/Login'
 import { OwnerOnboarding } from './pages/OwnerOnboarding'
 import { PrivacyPolicy } from './pages/PrivacyPolicy'
 import { ShopDetail } from './pages/ShopDetail'
 import { ShopDirectory } from './pages/ShopDirectory'
+import { ShopDisplay } from './pages/ShopDisplay'
 import { SignUp } from './pages/SignUp'
 import { TermsOfService } from './pages/TermsOfService'
 
@@ -73,6 +75,8 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<RootRoute />} />
+      <Route path="/kiosk/:slug" element={<KioskCheckIn />} />
+      <Route path="/display/:slug" element={<ShopDisplay />} />
 
       <Route element={<AppLayout />}>
         <Route path="/browse" element={<ShopDirectory />} />

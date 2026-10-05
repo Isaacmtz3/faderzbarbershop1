@@ -525,6 +525,24 @@ function SettingsTab({ shop, onShopUpdated }: { shop: Shop; onShopUpdated: (shop
         </div>
       </div>
 
+      <div className="mb-8 max-w-md rounded-xl border border-line bg-panel p-5">
+        <h2 className="mb-1 font-display text-sm font-semibold text-bone">Check-in kiosk &amp; TV display</h2>
+        <p className="mb-4 text-xs text-mute">
+          Branded, dedicated screens for {shop.name} — no login needed on the device. Open each link on the
+          iPad or TV you'll use, then bookmark it (or add to the home screen) so it launches with one tap.
+        </p>
+        <LaunchLink
+          label="Check-in kiosk"
+          description="A walk-in client checks themselves in here."
+          path={`/kiosk/${shop.slug}`}
+        />
+        <LaunchLink
+          label="TV queue display"
+          description="A read-only live board for the waiting room TV."
+          path={`/display/${shop.slug}`}
+        />
+      </div>
+
       <div className="max-w-md space-y-4">
         <div>
           <label className="mb-1.5 block text-xs uppercase tracking-wider text-mute">Shop name</label>
@@ -593,6 +611,41 @@ function SettingsTab({ shop, onShopUpdated }: { shop: Shop; onShopUpdated: (shop
         >
           {saving ? 'Saving…' : 'Save changes'}
         </button>
+      </div>
+    </div>
+  )
+}
+
+function LaunchLink({ label, description, path }: { label: string; description: string; path: string }) {
+  const [copied, setCopied] = useState(false)
+
+  async function copyLink() {
+    await navigator.clipboard.writeText(`${window.location.origin}${path}`)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
+  return (
+    <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-line bg-panel2 px-4 py-3 last:mb-0">
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-bone">{label}</p>
+        <p className="truncate text-xs text-mute">{description}</p>
+      </div>
+      <div className="flex shrink-0 gap-2">
+        <button
+          onClick={copyLink}
+          className="rounded border border-line px-3 py-1.5 text-xs text-mute hover:bg-panel hover:text-bone"
+        >
+          {copied ? 'Copied!' : 'Copy link'}
+        </button>
+        <a
+          href={path}
+          target="_blank"
+          rel="noreferrer"
+          className="rounded bg-brand px-3 py-1.5 text-xs font-medium text-bone hover:bg-brandBright"
+        >
+          Open
+        </a>
       </div>
     </div>
   )

@@ -75,6 +75,18 @@ export interface MyQueuePosition {
   position: number | null
 }
 
+export interface ShopQueueBoardEntry {
+  id: string
+  shop_id: string
+  display_name: string
+  status: QueueStatus
+  barber_id: string | null
+  service: string
+  checked_in_at: string
+  called_at: string | null
+  position: number | null
+}
+
 export interface Client {
   id: string
   shop_id: string
