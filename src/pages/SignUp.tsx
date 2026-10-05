@@ -18,12 +18,14 @@ export function SignUp() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<ProfileRole>(defaultRole === 'shop_owner' ? 'shop_owner' : 'client')
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [confirmSent, setConfirmSent] = useState(false)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    if (!agreedToTerms) return
     setLoading(true)
     setError(null)
     try {
@@ -114,10 +116,31 @@ export function SignUp() {
             className="w-full rounded border border-line bg-panel2 px-3 py-2.5 text-sm text-bone"
           />
         </div>
+        <label className="flex items-start gap-2.5 text-sm text-mute">
+          <input
+            type="checkbox"
+            required
+            checked={agreedToTerms}
+            onChange={(e) => setAgreedToTerms(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-line bg-panel2 accent-brand"
+          />
+          <span>
+            I agree to Lobby's{' '}
+            <Link to="/terms" target="_blank" className="text-brandBright hover:underline">
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link to="/privacy" target="_blank" className="text-brandBright hover:underline">
+              Privacy Policy
+            </Link>
+            .
+          </span>
+        </label>
+
         {error && <p className="text-sm text-crimsonBright">{error}</p>}
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !agreedToTerms}
           className="w-full rounded bg-brand px-4 py-2.5 font-medium text-bone transition-colors hover:bg-brandBright disabled:opacity-40"
         >
           {loading ? 'Creating account…' : 'Create account'}

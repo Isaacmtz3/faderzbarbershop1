@@ -1,4 +1,4 @@
-import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
+import { Link, Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { NavBar } from './components/NavBar'
 import { useAuth } from './contexts/AuthContext'
 import { AgentExplore } from './pages/AgentExplore'
@@ -7,9 +7,11 @@ import { CommandCenter } from './pages/CommandCenter'
 import { Landing } from './pages/Landing'
 import { Login } from './pages/Login'
 import { OwnerOnboarding } from './pages/OwnerOnboarding'
+import { PrivacyPolicy } from './pages/PrivacyPolicy'
 import { ShopDetail } from './pages/ShopDetail'
 import { ShopDirectory } from './pages/ShopDirectory'
 import { SignUp } from './pages/SignUp'
+import { TermsOfService } from './pages/TermsOfService'
 
 function RequireRole({ role, children }: { role: 'shop_owner'; children: React.ReactNode }) {
   const { user, profile, loading } = useAuth()
@@ -49,9 +51,20 @@ function RootRoute() {
 
 function AppLayout() {
   return (
-    <div className="min-h-screen bg-void">
+    <div className="flex min-h-screen flex-col bg-void">
       <NavBar />
-      <Outlet />
+      <div className="flex-1">
+        <Outlet />
+      </div>
+      <footer className="border-t border-line px-5 py-5 text-center text-xs text-mute">
+        <Link to="/terms" className="hover:text-bone hover:underline">
+          Terms of Service
+        </Link>
+        <span className="mx-2">·</span>
+        <Link to="/privacy" className="hover:text-bone hover:underline">
+          Privacy Policy
+        </Link>
+      </footer>
     </div>
   )
 }
@@ -66,6 +79,8 @@ function App() {
         <Route path="/shop/:slug" element={<ShopDetail />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route
           path="/owner"
           element={

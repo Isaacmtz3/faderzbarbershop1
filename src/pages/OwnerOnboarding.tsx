@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { AddressAutocomplete } from '../components/AddressAutocomplete'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import type { Shop } from '../types'
@@ -22,6 +23,7 @@ export function OwnerOnboarding() {
   const [slugEdited, setSlugEdited] = useState(false)
   const [city, setCity] = useState('')
   const [address, setAddress] = useState('')
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [phone, setPhone] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -47,7 +49,16 @@ export function OwnerOnboarding() {
 
     const { data: newShop, error: shopError } = await supabase
       .from('shops')
-      .insert({ owner_id: user.id, name, slug, city, address, phone })
+      .insert({
+        owner_id: user.id,
+        name,
+        slug,
+        city,
+        address,
+        phone,
+        lat: coords?.lat ?? null,
+        lng: coords?.lng ?? null,
+      })
       .select()
       .single()
 
@@ -133,10 +144,17 @@ export function OwnerOnboarding() {
         </div>
         <div>
           <label className="mb-1.5 block text-xs uppercase tracking-wider text-mute">Address</label>
-          <input
+          <AddressAutocomplete
             value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            className="w-full rounded border border-line bg-panel2 px-3 py-2.5 text-sm text-bone"
+            onChange={(next) => {
+              setAddress(next)
+              setCoords(null)
+            }}
+            onSelect={(suggestion) => {
+              setAddress(suggestion.addressLine)
+              if (suggestion.city) setCity(suggestion.city)
+              setCoords({ lat: suggestion.lat, lng: suggestion.lng })
+            }}
           />
         </div>
         {error && <p className="text-sm text-crimsonBright">{error}</p>}
