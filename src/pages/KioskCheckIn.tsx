@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { ETA_OPTIONS, type Barber, type Shop } from '../types'
+import { ETA_OPTIONS, type Barber, type Shop, type ShopQueueBoardEntry } from '../types'
 
 const DEFAULT_SERVICES = ['Haircut', 'Haircut + Beard', 'Beard trim', 'Kids cut']
 
@@ -9,6 +9,7 @@ export function KioskCheckIn() {
   const { slug } = useParams<{ slug: string }>()
   const [shop, setShop] = useState<Shop | null>(null)
   const [barbers, setBarbers] = useState<Barber[]>([])
+  const [waitingCounts, setWaitingCounts] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
 
   const [clientName, setClientName] = useState('')
@@ -19,6 +20,19 @@ export function KioskCheckIn() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  async function loadWaitingCounts(shopId: string) {
+    const { data } = await supabase
+      .from('shop_queue_board')
+      .select('barber_id')
+      .eq('shop_id', shopId)
+      .eq('status', 'waiting')
+    const counts: Record<string, number> = {}
+    for (const row of (data as Pick<ShopQueueBoardEntry, 'barber_id'>[]) ?? []) {
+      if (row.barber_id) counts[row.barber_id] = (counts[row.barber_id] ?? 0) + 1
+    }
+    setWaitingCounts(counts)
+  }
 
   useEffect(() => {
     if (!slug) return
@@ -33,11 +47,28 @@ export function KioskCheckIn() {
           .eq('active', true)
           .order('name')
         setBarbers((barberData as Barber[]) ?? [])
+        await loadWaitingCounts(shopData.id)
       }
       setLoading(false)
     }
     load()
   }, [slug])
+
+  useEffect(() => {
+    if (!shop) return
+    const channel = supabase
+      .channel(`kiosk-${shop.id}-queue`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'queue', filter: `shop_id=eq.${shop.id}` },
+        () => loadWaitingCounts(shop.id),
+      )
+      .subscribe()
+    return () => {
+      supabase.removeChannel(channel)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shop?.id])
 
   async function handleCheckIn() {
     if (!shop || !clientName.trim()) return
@@ -57,6 +88,7 @@ export function KioskCheckIn() {
       return
     }
     setSuccess(true)
+    loadWaitingCounts(shop.id)
   }
 
   function startOver() {
@@ -144,20 +176,36 @@ export function KioskCheckIn() {
             {barbers.length > 0 && (
               <div>
                 <label className="mb-1.5 block text-xs uppercase tracking-wider text-mute">
-                  Barber (optional)
+                  Pick a barber (optional)
                 </label>
-                <select
-                  value={barberId}
-                  onChange={(e) => setBarberId(e.target.value)}
-                  className="w-full rounded border border-line bg-panel2 px-3 py-3 text-base text-bone"
-                >
-                  <option value="">No preference</option>
-                  {barbers.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setBarberId('')}
+                    className={`rounded border px-3 py-3 text-left transition-colors ${
+                      barberId === '' ? 'border-brand bg-brand/10' : 'border-line bg-panel2'
+                    }`}
+                  >
+                    <p className="text-sm font-medium text-bone">First available</p>
+                    <p className="text-xs text-mute">No preference</p>
+                  </button>
+                  {barbers.map((b) => {
+                    const count = waitingCounts[b.id] ?? 0
+                    return (
+                      <button
+                        type="button"
+                        key={b.id}
+                        onClick={() => setBarberId(b.id)}
+                        className={`rounded border px-3 py-3 text-left transition-colors ${
+                          barberId === b.id ? 'border-brand bg-brand/10' : 'border-line bg-panel2'
+                        }`}
+                      >
+                        <p className="text-sm font-medium text-bone">{b.name}</p>
+                        <p className="text-xs text-mute">{count > 0 ? `${count} waiting` : 'No wait'}</p>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             )}
             <div>
