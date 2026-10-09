@@ -16,12 +16,12 @@ import { SignUp } from './pages/SignUp'
 import { TermsOfService } from './pages/TermsOfService'
 
 function RequireRole({ role, children }: { role: 'shop_owner'; children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth()
-  if (loading) return <div className="mx-auto max-w-3xl px-5 py-10 text-mute">Loading…</div>
-  if (!user) return <Navigate to="/login" replace />
-  if (profile && profile.role !== role) {
-    return <div className="mx-auto max-w-lg px-5 py-10 text-mute">This page is for shop owners only.</div>
+  const { user, profile, loading, profileLoading } = useAuth()
+  if (loading || (user && profileLoading)) {
+    return <div className="mx-auto max-w-3xl px-5 py-10 text-mute">Loading…</div>
   }
+  if (!user) return <Navigate to="/login" replace />
+  if (profile?.role !== role) return <Navigate to="/" replace />
   return <>{children}</>
 }
 
@@ -29,8 +29,10 @@ function RequireRole({ role, children }: { role: 'shop_owner'; children: React.R
  * bounced to "/" with no explanation — this route's existence isn't
  * something to confirm to someone who isn't supposed to be here. */
 function RequireAdmin({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth()
-  if (loading) return <div className="flex min-h-screen items-center justify-center bg-void text-mute">Loading…</div>
+  const { user, profile, loading, profileLoading } = useAuth()
+  if (loading || (user && profileLoading)) {
+    return <div className="flex min-h-screen items-center justify-center bg-void text-mute">Loading…</div>
+  }
   if (!user || profile?.role !== 'admin') return <Navigate to="/" replace />
   return <>{children}</>
 }
